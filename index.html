@@ -1,25 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Redirecting...</title>
-    <script>
-        // 默认群号
-        const DEFAULT_GROUP_ID = '827813247';
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
-        // 从路径提取数字 (如 /myrepo/123456 或 /123456)
-        const path = window.location.pathname;
-        const match = path.match(/\/(\d+)(?:\/|$)/);
-        const groupId = match ? match[1] : DEFAULT_GROUP_ID;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f5f5f5;
+        }
         
-        // 构建跳转链接
-        const targetUrl = `https://ti.qq.com/new_open_qq/index.html?appid=64&url=mqqapi%3A%2F%2Fgroup%2Fjoin_troop%3Fsrc_type%3Dinternal%26version%3D1%26troop_uin%3D${groupId}%26subsource_id%3D1030%26is_need_jump_aio%3D1`;
+        .container {
+            text-align: center;
+        }
         
-        // 立即跳转
-        window.location.替换(targetUrl);
-    </script>
+        h1 {
+            color: #333;
+            font-size: 2rem;
+            font-weight: 400;
+        }
+    </style>
 </head>
 <body>
-    <p>Redirecting to QQ group...</p>
+    <div class="container">
+        <h1>欢迎来到 Index</h1>
+    </div>
 </body>
 </html>
