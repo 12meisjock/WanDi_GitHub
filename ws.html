@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket 调试工具</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; background-color: #f4f4f9; }
+        h2 { text-align: center; color: #333; }
+        
+        /* 布局样式 */
+        .container { display: flex; flex-direction: column; gap: 15px; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        /* 连接控制区 */
+        .connection-bar { display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        
+        /* 按钮样式 */
+        button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-connect { background-color: #28a745; color: white; }
+        .btn-connect:hover { background-color: #218838; }
+        .btn-disconnect { background-color: #dc3545; color: white; }
+        .btn-disconnect:hover { background-color: #c82333; }
+        .btn-send { background-color: #007bff; color: white; }
+        .btn-send:hover { background-color: #0069d9; }
+        
+        /* 状态指示器 */
+        #status { text-align: center; font-weight: bold; margin-top: 10px; color: #666; }
+        .status-connected { color: #28a745 !important; }
+        .status-disconnected { color: #dc3545 !important; }
+
+        /* 消息日志区 */
+        #log { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #1e1e1e; color: #00ff00; font-family: 'Consolas', monospace; border-radius: 4px; margin-bottom: 10px; }
+        .msg-item { margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 2px; }
+        .msg-sent { color: #4caf50; } /* 发送的消息绿色 */
+        .msg-received { color: #2196f3; } /* 接收的消息蓝色 */
+        .msg-system { color: #ff9800; font-style: italic; } /* 系统消息橙色 */
+        
+        /* 发送区 */
+        .send-bar { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>WebSocket 调试客户端</h2>
+
+    <div class="container">
+        <!-- 1. 连接控制 -->
+        <div class="card">
+            <div class="connection-bar">
+                <input type="text" id="wsUrl" value="wss://answer-required-bacteria-scenes.trycloudflare.com" placeholder="输入 WebSocket 地址 (ws:// 或 wss://)">
+                <button id="connectBtn" class="btn-connect">连接</button>
+                <button id="disconnectBtn" class="btn-disconnect" disabled>断开</button>
+            </div>
+            <div id="status" class="status-disconnected">未连接</div>
+        </div>
+
+        <!-- 2. 消息日志 -->
+        <div class="card">
+            <div id="log"></div>
+        </div>
+
+        <!-- 3. 发送控制 -->
+        <div class="card">
+            <div class="send-bar">
+                <input type="text" id="messageInput" placeholder="输入要发送的消息..." disabled>
+                <button id="sendBtn" class="btn-send" disabled>发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('wsUrl');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const messageInput = document.getElementById('messageInput');
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+
+        let ws = null;
+
+        // 添加日志函数
+        function addLog(msg, type = 'system') {
+            const div = document.createElement('div');
+            const time = new Date().toLocaleTimeString();
+            div.className = `msg-item msg-${type}`;
+            
+            let prefix = '';
+            if (type === 'sent') prefix = '>>> [我]: ';
+            else if (type === 'received') prefix = '<<< [服务器]: ';
+            else prefix = '--- [系统]: ';
+
+            div.textContent = `[${time}] ${prefix}${msg}`;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight; // 自动滚动到底部
+        }
+
+        // 连接按钮点击
+        connectBtn.addEventListener('click', () => {
+            const url = urlInput.value.trim();
+            if (!url) return alert('请输入地址');
+
+            try {
+                ws = new WebSocket(url);
+
+                // 连接成功
+                ws.onopen = () => {
+                    addLog('连接已建立', 'system');
+                    statusDiv.textContent = '已连接';
+                    statusDiv.className = 'status-connected';
+                    
+                    // 启用按钮
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    sendBtn.disabled = false;
+                    messageInput.disabled = false;
+                    messageInput.focus();
+                };
+
+                // 接收消息
+                ws.onmessage = (event) => {
+                    addLog(event.data, 'received');
+                };
+
+                // 连接关闭
+                ws.onclose = () => {
+                    addLog('连接已关闭', 'system');
+                    statusDiv.textContent = '已断开';
+                    statusDiv.className = 'status-disconnected';
+                    
+                    // 重置按钮
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    sendBtn.disabled = true;
+                    messageInput.disabled = true;
+                    ws = null;
+                };
+
+                // 错误处理
+                ws.onerror = (err) => {
+                    addLog('发生错误', 'system');
+                    console.error(err);
+                };
+
+            } catch (e) {
+                alert('地址格式错误');
+            }
+        });
+
+        // 断开按钮点击
+        disconnectBtn.addEventListener('click', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+
+        // 发送按钮点击
+        sendBtn.addEventListener('click', () => {
+            const msg = messageInput.value.trim();
+            if (msg && ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(msg);
+                addLog(msg, 'sent');
+                messageInput.value = ''; // 发送后清空
+            }
+        });
+
+        // 支持回车发送
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
